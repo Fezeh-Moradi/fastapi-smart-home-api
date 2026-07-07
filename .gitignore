@@ -1,0 +1,69 @@
+# Virtual Environment
+
+venv/
+.venv/
+env/
+
+# Python
+
+**pycache**/
+*.py[cod]
+*$py.class
+
+# Distribution / Packaging
+
+build/
+dist/
+*.egg-info/
+
+# IDE
+
+.vscode/
+.idea/
+
+# Environment Variables
+
+.env
+
+# Logs
+
+*.log
+
+# Pytest
+
+.pytest_cache/
+
+# Coverage
+
+.coverage
+htmlcov/
+
+# mypy
+
+.mypy_cache/
+
+# Ruff
+
+.ruff_cache/
+
+# Jupyter Notebook
+
+.ipynb_checkpoints/
+
+# macOS
+
+.DS_Store
+
+# Windows
+
+Thumbs.db
+desktop.ini
+
+# MongoDB
+
+*.wt
+mongod.lock
+
+# Uvicorn
+
+uvicorn.log
