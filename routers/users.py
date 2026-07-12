@@ -13,13 +13,28 @@ router = APIRouter(
 @router.get("/", response_model=UserListResponse)
 async def get_users(
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100)
+    limit: int = Query(10, ge=1, le=100),
+    name: str | None = Query(None),
+    phone: str | None = Query(None)
 ):
     users = []
+    filters = {}
 
-    total = await users_collection.count_documents({})
+    total = await users_collection.count_documents(filters)
 
-    cursor = users_collection.find().skip(skip).limit(limit)
+    
+
+    if name:
+        filters["name"] = {
+            "$regex": name,
+            "$options": "i"
+        }
+
+    
+    if phone:
+        filters["phone"] = phone
+
+    cursor = users_collection.find(filters).skip(skip).limit(limit)
 
     async for user in cursor:
         user["id"] =  str(user.pop("_id"))
