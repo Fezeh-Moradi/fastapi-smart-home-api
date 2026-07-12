@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from core.logger import logger
 
 from core.deps import get_current_user
 from core.security import (
@@ -35,6 +36,7 @@ async def register(user: UserCreate):
     )
 
     if existing_user:
+        logger.warning(f"Register failed. Phone already exists: {user.phone}")
         raise HTTPException(
             status_code=400,
             detail="User already exists"
@@ -50,6 +52,8 @@ async def register(user: UserCreate):
         user_dict
     )
 
+    logger.info(f"User registered: {user.phone}")
+
     return {
         "message": "User registered successfully",
         "id": str(result.inserted_id)
@@ -64,6 +68,8 @@ async def login(user: UserLogin):
     )
 
     if not db_user:
+
+        logger.warning(f"Login failed. User not found: {user.phone}")
         raise HTTPException(
             status_code=404,
             detail="User not found"
@@ -73,6 +79,8 @@ async def login(user: UserLogin):
             user.password,
             db_user["password"]
     ):
+        
+        logger.warning(f"wrong password: {user.phone}")
         raise HTTPException(
             status_code=400,
             detail="Wrong password"
@@ -83,6 +91,8 @@ async def login(user: UserLogin):
             "user_id": str(db_user["_id"])
         }
     )
+
+    logger.info(f"User logged in: {user.phone}")
 
     return {
         "access_token": token,

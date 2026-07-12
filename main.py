@@ -2,8 +2,11 @@ from fastapi import FastAPI,HTTPException
 from fastapi.exceptions import RequestValidationError
 from handlers.exceptions import http_exception_handler, validation_exception_handler
 from routers import auth, users, devices
+from core.logger import logger
 
 app = FastAPI()
+
+logger.info("Application started")
 
 app.add_exception_handler(
     HTTPException,
