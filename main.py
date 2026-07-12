@@ -1,8 +1,19 @@
-from fastapi import FastAPI
-
+from fastapi import FastAPI,HTTPException
+from fastapi.exceptions import RequestValidationError
+from handlers.exceptions import http_exception_handler, validation_exception_handler
 from routers import auth, users, devices
 
 app = FastAPI()
+
+app.add_exception_handler(
+    HTTPException,
+    http_exception_handler
+)
+
+app.add_exception_handler(
+    RequestValidationError,
+    validation_exception_handler
+)
 
 app.include_router(auth.router)
 app.include_router(users.router)
