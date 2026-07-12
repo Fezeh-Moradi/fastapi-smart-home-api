@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
-from schemas.user import UserCreate
+from schemas.user import UserCreate, UserResponse, UserUpdate
+from core.security import hash_password
 from database.mongodb import users_collection
 from bson import ObjectId
 
@@ -9,19 +10,19 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("/", response_model=list[UserResponse])
 async def get_users():
     users = []
     cursor = users_collection.find()
 
     async for user in cursor:
-        user["_id"] = str(user["_id"])
+        user["id"] =  str(user.pop("_id"))
         users.append(user)
 
     return users
 
 
-@router.get("/{user_id}")
+@router.get("/{user_id}", response_model=UserResponse)
 async def get_user(user_id: str):
 
     if not ObjectId.is_valid(user_id):
@@ -34,7 +35,8 @@ async def get_user(user_id: str):
     if not user:
         raise HTTPException(404, "User not found")
 
-    user["_id"] = str(user["_id"])
+    user["id"] = str(user.pop("_id"))
+
     return user
 
 
@@ -57,14 +59,20 @@ async def create_user(user: UserCreate):
 
 
 @router.put("/{user_id}")
-async def update_user(user_id: str, user: UserCreate):
+async def update_user(user_id: str, user: UserUpdate):
 
     if not ObjectId.is_valid(user_id):
         raise HTTPException(400, "Invalid ID")
 
+    update_data = user.model_dump(exclude_unset=True)
+
+    if "password" in update_data:
+        update_data["password"] = hash_password(update_data["password"])
+
+    
     result = await users_collection.update_one(
         {"_id": ObjectId(user_id)},
-        {"$set": user.dict()}
+        {"$set": update_data}
     )
 
     if result.matched_count == 0:

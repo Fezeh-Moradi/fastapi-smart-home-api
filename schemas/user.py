@@ -12,7 +12,14 @@ class UserLogin(BaseModel):
     password: str
 
 
-class UserOut(BaseModel):
+class UserResponse(BaseModel):
     id: str
     name: str
     phone: str
+
+
+class UserUpdate(BaseModel):
+    name: str | None = None
+    phone: str | None = None
+    password: str | None = None
+    
