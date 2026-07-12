@@ -3,6 +3,7 @@ from schemas.user import UserCreate, UserResponse, UserUpdate, UserListResponse
 from core.security import hash_password
 from database.mongodb import users_collection
 from bson import ObjectId
+from typing import Literal
 
 router = APIRouter(
     prefix="/users",
@@ -15,14 +16,12 @@ async def get_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     name: str | None = Query(None),
-    phone: str | None = Query(None)
+    phone: str | None = Query(None),
+    sort: Literal["name", "-name", "phone", "-phone"] = Query("name")
 ):
     users = []
     filters = {}
 
-    total = await users_collection.count_documents(filters)
-
-    
 
     if name:
         filters["name"] = {
@@ -34,8 +33,23 @@ async def get_users(
     if phone:
         filters["phone"] = phone
 
-    cursor = users_collection.find(filters).skip(skip).limit(limit)
+    total = await users_collection.count_documents(filters)
 
+
+    if sort.startswith("-"):
+        sort_field = sort[1:]
+        sort_order = -1
+    else:
+        sort_field = sort
+        sort_order = 1
+
+    cursor = (
+        users_collection
+        .find(filters)
+        .sort(sort_field, sort_order)
+        .skip(skip)
+        .limit(limit)
+    )
     async for user in cursor:
         user["id"] =  str(user.pop("_id"))
         users.append(user)
@@ -76,7 +90,12 @@ async def create_user(user: UserCreate):
     if existing_user:
         raise HTTPException(400, "Phone already exists")
 
-    result = await users_collection.insert_one(user.dict())
+    user_data = user.model_dump()
+
+    user_data["password"] = hash_password(user.password)
+
+    result = await users_collection.insert_one(user_data)
+
 
     return {
         "message": "User created",
