@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from schemas.user import UserCreate, UserResponse, UserUpdate
+from schemas.user import UserCreate, UserResponse, UserUpdate, UserBase
 from core.security import hash_password
 from database.mongodb import users_collection
 from bson import ObjectId

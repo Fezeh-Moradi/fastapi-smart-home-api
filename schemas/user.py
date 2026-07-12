@@ -1,10 +1,31 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
-class UserCreate(BaseModel):
+class UserBase(BaseModel):
     name: str = Field(min_length=3)
     phone: str
+
+    @field_validator("phone")
+    @classmethod
+
+    def validate_phone(cls, value):
+        if not value.startswith("09"):
+            raise ValueError("Phone number must start with 09")
+        
+        if len(value) !=11:
+            raise ValueError("Phone number must be 11 digits")
+        
+        if not value.isdigit():
+            raise ValueError("Phone number must contain only digits")
+        
+        return value
+
+
+class UserCreate(UserBase):
     password: str = Field(min_length=6)
+
+
+    
 
 
 class UserLogin(BaseModel):
@@ -16,10 +37,10 @@ class UserResponse(BaseModel):
     id: str
     name: str
     phone: str
+    
 
 
 class UserUpdate(BaseModel):
     name: str | None = None
     phone: str | None = None
     password: str | None = None
-    
