@@ -37,6 +37,13 @@ class UserResponse(BaseModel):
     id: str
     name: str
     phone: str
+
+
+class UserListResponse(BaseModel):
+    total: int
+    skip: int
+    limit: int
+    items: list[UserResponse]
     
 
 

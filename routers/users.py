@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException, status
-from schemas.user import UserCreate, UserResponse, UserUpdate, UserBase
+from fastapi import APIRouter, HTTPException, status, Query
+from schemas.user import UserCreate, UserResponse, UserUpdate, UserListResponse
 from core.security import hash_password
 from database.mongodb import users_collection
 from bson import ObjectId
@@ -10,16 +10,27 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[UserResponse])
-async def get_users():
+@router.get("/", response_model=UserListResponse)
+async def get_users(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100)
+):
     users = []
-    cursor = users_collection.find()
+
+    total = await users_collection.count_documents({})
+
+    cursor = users_collection.find().skip(skip).limit(limit)
 
     async for user in cursor:
         user["id"] =  str(user.pop("_id"))
         users.append(user)
 
-    return users
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "items": users
+    }
 
 
 @router.get("/{user_id}", response_model=UserResponse)
