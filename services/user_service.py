@@ -5,6 +5,20 @@ from bson import ObjectId
 from schemas.user import UserCreate, UserUpdate
 
 
+def serialize_user(user: dict) -> dict:
+    user["id"] = str(user.pop("_id"))
+    return user
+
+
+def validate_object_id(user_id: str) -> ObjectId:
+    if not ObjectId.is_valid(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid ID"
+        )
+
+    return ObjectId(user_id)
+
 async def get_users(
     skip: int,
     limit: int,
@@ -42,8 +56,8 @@ async def get_users(
     )
 
     async for user in cursor:
-        user["id"] = str(user.pop("_id"))
-        users.append(user)
+        
+        users.append(serialize_user(user))
 
     return {
         "total": total,
@@ -55,14 +69,10 @@ async def get_users(
 
 async def get_user(user_id: str):
 
-    if not ObjectId.is_valid(user_id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid ID"
-        )
+    object_id = validate_object_id(user_id)
 
     user = await users_collection.find_one(
-        {"_id": ObjectId(user_id)}
+        {"_id": object_id}
     )
 
     if not user:
@@ -71,9 +81,7 @@ async def get_user(user_id: str):
             detail="User not found"
         )
 
-    user["id"] = str(user.pop("_id"))
-
-    return user
+    return serialize_user(user)
 
 
 async def create_user(user: UserCreate):
@@ -101,11 +109,7 @@ async def create_user(user: UserCreate):
 
 async def update_user(user_id: str, user: UserUpdate):
 
-    if not ObjectId.is_valid(user_id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid ID"
-        )
+    object_id = validate_object_id(user_id)
 
     update_data = user.model_dump(exclude_unset=True)
 
@@ -115,7 +119,7 @@ async def update_user(user_id: str, user: UserUpdate):
 
 
     result = await users_collection.update_one(
-        {"_id": ObjectId(user_id)},
+        {"_id": object_id},
         {"$set": update_data}
     )
 
@@ -130,14 +134,10 @@ async def update_user(user_id: str, user: UserUpdate):
 
 async def delete_user(user_id: str):
 
-    if not ObjectId.is_valid(user_id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid ID"
-        )
+    object_id = validate_object_id(user_id)
 
     result = await users_collection.delete_one(
-        {"_id": ObjectId(user_id)}
+        {"_id": object_id}
     )
 
     if result.deleted_count == 0:
