@@ -11,6 +11,10 @@ def validate_object_id(owner_id: str) -> ObjectId:
         )
     return ObjectId(owner_id)
 
+
+
+    
+
 async def create_device(device: DeviceCreate):
     
     object_owner_id = validate_object_id(device.owner_id)
@@ -43,5 +47,56 @@ async def create_device(device: DeviceCreate):
         "message": "Device created successfully",
         "id": str(result.inserted_id)
     }
+
+
+
+
+async def get_devices():
+    pipeline = [
+        {
+            "$lookup": {
+                "from": "users",
+                "localField": "owner_id",
+                "foreignField": "_id",
+                "as": "owner"
+            }
+        },
+        {
+            "$unwind": "$owner"
+        },
+        {
+            "$project": {
+                "_id": 0,
+
+                "id": {
+                    "$toString": "$_id"
+                },
+
+                "name": 1,
+                "device_type": 1,
+                "serial_number": 1,
+                "status": 1,
+                "is_online": 1,
+
+                "owner": {
+                    "id": {
+                        "$toString": "$owner._id"
+                    },
+                    "name": "$owner.name",
+                    "phone": "$owner.phone"
+                }
+            }
+        }
+    ]
+
+    cursor = devices_collection.aggregate(pipeline)
+
+    devices = []
+
+    async for device in cursor:
+        devices.append(device)
+        print(device)
+
+    return devices
 
     
