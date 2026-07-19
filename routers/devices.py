@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from bson import ObjectId
 from typing import Literal
 from database.mongodb import devices_collection
-from schemas.device import DeviceCreate, DeviceListResponse, DeviceStatus, DeviceType
+from schemas.device import DeviceCreate, DeviceUpdate, DeviceResponse, DeviceListResponse, DeviceStatus, DeviceType
 from core.deps import get_current_user
 from services import device_service
 
@@ -36,3 +36,19 @@ async def get_devices(
         owner_id = owner_id,
          is_online = is_online,
     )
+
+
+
+@router.get("/{device_id}", response_model=DeviceResponse)
+async def get_device(device_id: str):
+    return await device_service.get_device(device_id)
+
+
+@router.put("/{device_id}")
+async def update_device(device_id: str, device: DeviceUpdate):
+    return await device_service.update_device(device_id, device)
+
+
+@router.delete("/{device_id}")
+async def delete_device(device_id: str):
+    return await device_service.delete_device(device_id)
