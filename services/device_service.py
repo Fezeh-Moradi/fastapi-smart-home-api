@@ -1,4 +1,4 @@
-from schemas.device import DeviceCreate
+from schemas.device import DeviceCreate, DeviceType, DeviceStatus
 from bson import ObjectId
 from fastapi import HTTPException, status
 from database.mongodb import users_collection, devices_collection
@@ -51,8 +51,43 @@ async def create_device(device: DeviceCreate):
 
 
 
-async def get_devices():
+async def get_devices(
+    skip: int,
+    limit: int,
+    sort: str,
+    status: DeviceStatus | None,
+    device_type: DeviceType | None,
+    owner_id: str | None,
+    is_online: bool | None,
+):
+    
+    if sort.startswith("-"):
+        sort_field = sort[1:]
+        sort_order = -1
+
+    else:
+        sort_field = sort
+        sort_order = 1
+
+    filters = {}
+
+    if status:
+        filters["status"] = status
+
+    if device_type:
+        filters["device_type"] = device_type
+
+    if is_online is not None:
+        filters["is_online"] = is_online
+
+    if owner_id:
+        filters["owner_id"] = validate_object_id(owner_id)
+
     pipeline = [
+        {
+            "$match": filters
+        },
+
         {
             "$lookup": {
                 "from": "users",
@@ -86,17 +121,34 @@ async def get_devices():
                     "phone": "$owner.phone"
                 }
             }
+        },
+        {
+            "$sort": {
+                sort_field: sort_order
+            }
+        },
+
+        {
+            "$skip": skip
+        },
+        {
+            "$limit": limit
         }
     ]
 
+    total = await devices_collection.count_documents(filters)
     cursor = devices_collection.aggregate(pipeline)
 
     devices = []
 
     async for device in cursor:
         devices.append(device)
-        print(device)
 
-    return devices
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "items": devices
+    }
 
     
