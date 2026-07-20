@@ -61,7 +61,7 @@ async def validate_device(device_id: str):
             detail="Device not found"
         )
 
-    return object_id
+    return device
 
 def get_device_pipeline():
     return [
@@ -223,9 +223,20 @@ async def get_device(device_id: str):
 
 
 
-async def update_device(device_id: str, device: DeviceUpdate):
+async def update_device(
+    device_id: str,
+    device: DeviceUpdate,
+    current_user: str,
+):
     
-    object_id = await validate_device(device_id)
+    device_db = await validate_device(device_id)
+    current_user_id = await validate_current_user(current_user)
+
+    if device_db["owner_id"] != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to update this device"
+        )
     
     update_data = device.model_dump(exclude_unset=True)
     if not update_data:
@@ -238,11 +249,11 @@ async def update_device(device_id: str, device: DeviceUpdate):
     if "serial_number" in update_data:
         await validate_serial_number(
             update_data["serial_number"],
-            exclude_id=object_id,
+            exclude_id=device_db["_id"],
         )
     
     await devices_collection.update_one(
-        {"_id": object_id},
+        {"_id": device_db["_id"]},
         {"$set": update_data}
     )
 
@@ -251,11 +262,21 @@ async def update_device(device_id: str, device: DeviceUpdate):
     }
 
 
-async def delete_device(device_id: str):
-    object_id = await validate_device(device_id)
+async def delete_device(
+        device_id: str,
+        current_user: str,
+):
+    device_db = await validate_device(device_id)
+    current_user_id = await validate_current_user(current_user)
 
+    if device_db["owner_id"] != current_user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have permission to delete this device"
+        )
+    
     await devices_collection.delete_one(
-        {"_id": object_id}
+        {"_id": device_db["_id"]}
     )
 
     return {

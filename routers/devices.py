@@ -51,10 +51,24 @@ async def get_device(device_id: str):
 
 
 @router.put("/{device_id}")
-async def update_device(device_id: str, device: DeviceUpdate):
-    return await device_service.update_device(device_id, device)
+async def update_device(
+    device_id: str,
+    device: DeviceUpdate,
+    current_user: str = Depends(get_current_user)
+):
+    return await device_service.update_device(
+        device_id,
+        device,
+        current_user,
+    )
 
 
 @router.delete("/{device_id}")
-async def delete_device(device_id: str):
-    return await device_service.delete_device(device_id)
+async def delete_device(
+    device_id: str,
+    current_user: str = Depends(get_current_user),
+):
+    return await device_service.delete_device(
+        device_id,
+        current_user,
+    )
