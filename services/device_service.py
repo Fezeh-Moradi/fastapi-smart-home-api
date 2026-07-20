@@ -3,28 +3,28 @@ from bson import ObjectId
 from fastapi import HTTPException, status
 from database.mongodb import users_collection, devices_collection
 
-def validate_object_id(owner_id: str) -> ObjectId:
-    if not ObjectId.is_valid(owner_id):
+def validate_object_id(id: str) -> ObjectId:
+    if not ObjectId.is_valid(id):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid ID"
         )
-    return ObjectId(owner_id)
+    return ObjectId(id)
 
-async def validate_owner(owner_id: str) -> ObjectId:
-    object_owner_id = validate_object_id(owner_id)
+async def validate_current_user(user_id: str) -> ObjectId:
+    object_user_id  = validate_object_id(user_id)
 
-    owner = await users_collection.find_one(
-        {"_id": object_owner_id}
+    user = await users_collection.find_one(
+        {"_id": object_user_id }
     )
 
-    if not owner:
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Owner not found"
+            detail="User not found"
         )
     
-    return object_owner_id
+    return object_user_id 
 
 async def validate_serial_number(
         serial_number: str,
@@ -97,14 +97,17 @@ def get_device_pipeline():
 
     
 
-async def create_device(device: DeviceCreate):
+async def create_device(
+        device: DeviceCreate,
+        current_user: str,
+):
     
-    object_owner_id = await validate_owner(device.owner_id)
+    object_user_id  = await validate_current_user(current_user)
     
     await validate_serial_number(device.serial_number)
     
     device_data = device.model_dump()
-    device_data["owner_id"] = object_owner_id
+    device_data["owner_id"] = object_user_id 
     device_data["is_online"] = False
 
     result = await devices_collection.insert_one(device_data)
@@ -231,11 +234,6 @@ async def update_device(device_id: str, device: DeviceUpdate):
             detail="No fields to update"
         )
     
-    
-    if "owner_id" in update_data:
-        update_data["owner_id"] = await validate_owner(
-            update_data["owner_id"]
-    )
 
     if "serial_number" in update_data:
         await validate_serial_number(

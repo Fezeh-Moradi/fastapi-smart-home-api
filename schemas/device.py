@@ -24,7 +24,6 @@ class DeviceCreate(BaseModel):
     name: str
     device_type: DeviceType
     serial_number: str
-    owner_id: str
     status: DeviceStatus
 
 class DeviceUpdate(BaseModel):
@@ -32,7 +31,6 @@ class DeviceUpdate(BaseModel):
     device_type: DeviceType | None = None
     serial_number: str | None = None
     status: DeviceStatus | None = None
-    owner_id: str | None = None
 
 class DeviceResponse(BaseModel):
     id: str

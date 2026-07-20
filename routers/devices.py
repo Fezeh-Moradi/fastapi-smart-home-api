@@ -12,8 +12,14 @@ router = APIRouter(
 )
 
 @router.post("/")
-async def create_device(device: DeviceCreate):
-    return await device_service.create_device(device)
+async def create_device(
+    device: DeviceCreate,
+    current_user: str = Depends(get_current_user),
+):
+    return await device_service.create_device(
+        device,
+        current_user,
+    )
 
 
 @router.get("/", response_model=DeviceListResponse)
