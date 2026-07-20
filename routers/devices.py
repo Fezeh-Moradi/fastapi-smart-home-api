@@ -24,6 +24,7 @@ async def create_device(
 
 @router.get("/", response_model=DeviceListResponse)
 async def get_devices(
+    current_user: str = Depends(get_current_user),
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     sort: Literal["name", "-name"] = Query("name"),
@@ -46,7 +47,10 @@ async def get_devices(
 
 
 @router.get("/{device_id}", response_model=DeviceResponse)
-async def get_device(device_id: str):
+async def get_device(
+    device_id: str,
+    current_user: str = Depends(get_current_user),
+):
     return await device_service.get_device(device_id)
 
 

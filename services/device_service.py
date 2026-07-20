@@ -1,5 +1,6 @@
 from schemas.device import DeviceCreate, DeviceUpdate, DeviceType, DeviceStatus
 from bson import ObjectId
+from core.logger import logger
 from fastapi import HTTPException, status
 from database.mongodb import users_collection, devices_collection
 
@@ -111,6 +112,10 @@ async def create_device(
     device_data["is_online"] = False
 
     result = await devices_collection.insert_one(device_data)
+
+    logger.info(
+        f"Device created: id={result.inserted_id}, user={current_user}"
+    )
 
     return{
         "message": "Device created successfully",
@@ -233,6 +238,9 @@ async def update_device(
     current_user_id = await validate_current_user(current_user)
 
     if device_db["owner_id"] != current_user_id:
+        logger.warning(
+            f"Unauthorized update attempt: user={current_user}, device={device_id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to update this device"
@@ -257,6 +265,10 @@ async def update_device(
         {"$set": update_data}
     )
 
+    logger.info(
+        f"Device updated: id={device_id}, user={current_user}"
+    )
+
     return{
         "message": "Device updated successfully"
     }
@@ -270,13 +282,20 @@ async def delete_device(
     current_user_id = await validate_current_user(current_user)
 
     if device_db["owner_id"] != current_user_id:
+        logger.warning(
+            f"Unauthorized delete attempt: user={current_user}, device={device_id}"
+        )
         raise HTTPException(
-            status_code=403,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to delete this device"
         )
     
     await devices_collection.delete_one(
         {"_id": device_db["_id"]}
+    )
+
+    logger.info(
+        f"Device deleted: id={device_id}, user={current_user}"
     )
 
     return {
