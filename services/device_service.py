@@ -129,9 +129,11 @@ async def get_devices(
     sort: str,
     status: DeviceStatus | None,
     device_type: DeviceType | None,
-    owner_id: str | None,
     is_online: bool | None,
+    current_user: str,
 ):
+    
+    current_user_id = await validate_current_user(current_user)
     
     if sort.startswith("-"):
         sort_field = sort[1:]
@@ -141,7 +143,9 @@ async def get_devices(
         sort_field = sort
         sort_order = 1
 
-    filters = {}
+    filters = {
+        "owner_id": current_user_id
+    }
 
     if status:
         filters["status"] = status
@@ -152,8 +156,6 @@ async def get_devices(
     if is_online is not None:
         filters["is_online"] = is_online
 
-    if owner_id:
-        filters["owner_id"] = validate_object_id(owner_id)
 
     pipeline = [
         {
@@ -197,13 +199,23 @@ async def get_devices(
 
 
 
-async def get_device(device_id: str):
-    object_id = validate_object_id(device_id)
+async def get_device(
+    device_id: str,
+    current_user: str,
+):
+    device_db = await validate_device(device_id)
+    current_user_id = await validate_current_user(current_user)
+
+    if device_db["owner_id"] != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to access this device"
+        )
 
     pipeline = [
         {
             "$match":{
-                "_id": object_id
+                "_id": device_db["_id"] 
             }
         }
     ]

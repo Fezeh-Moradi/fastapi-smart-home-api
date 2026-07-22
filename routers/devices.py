@@ -28,10 +28,8 @@ async def get_devices(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     sort: Literal["name", "-name"] = Query("name"),
-
     status: DeviceStatus | None = Query(None),
     device_type: DeviceType | None = Query(None),
-    owner_id: str | None = Query(None),
     is_online: bool | None = Query(None),
 ):
     return await device_service.get_devices(
@@ -40,8 +38,8 @@ async def get_devices(
         sort = sort,
         status = status,
         device_type = device_type,
-        owner_id = owner_id,
-         is_online = is_online,
+        current_user=current_user,
+        is_online = is_online,
     )
 
 
@@ -51,7 +49,10 @@ async def get_device(
     device_id: str,
     current_user: str = Depends(get_current_user),
 ):
-    return await device_service.get_device(device_id)
+    return await device_service.get_device(
+        device_id,
+        current_user,
+    )
 
 
 @router.put("/{device_id}")
