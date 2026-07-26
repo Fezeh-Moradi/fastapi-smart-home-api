@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
 from core.logger import logger
-
 from core.deps import get_current_user
 from core.security import (
     create_access_token,
