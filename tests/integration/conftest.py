@@ -47,3 +47,12 @@ def patch_auth_database(test_db):
         test_db.users,
     ):
         yield
+
+
+@pytest.fixture
+def patch_user_database(test_db):
+    with patch(
+        "services.user_service.users_collection",
+        test_db.users,
+    ):
+        yield
