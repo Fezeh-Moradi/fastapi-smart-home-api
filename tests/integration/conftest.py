@@ -56,3 +56,68 @@ def patch_user_database(test_db):
         test_db.users,
     ):
         yield
+
+
+@pytest.fixture
+async def clean_test_database(test_db):
+    await test_db.users.delete_many({})
+    await test_db.devices.delete_many({})
+
+    yield
+
+    await test_db.users.delete_many({})
+    await test_db.devices.delete_many({})
+
+
+@pytest.fixture
+def patch_device_database(test_db):
+    with patch(
+        "services.device_service.users_collection",
+        test_db.users,
+    ), patch(
+        "services.device_service.devices_collection",
+        test_db.devices,
+    ):
+        yield
+
+
+@pytest.fixture
+async def authenticated_user(
+    client,
+    test_db,
+    patch_auth_database,
+    patch_device_database,
+):
+    response = await client.post(
+        "/auth/register",
+        json={
+            "name": "Device Test User",
+            "phone": "09111111111",
+            "password": "123456",
+        },
+    )
+
+    assert response.status_code == 200
+
+    login_response = await client.post(
+        "/auth/login",
+        json={
+            "phone": "09111111111",
+            "password": "123456",
+        },
+    )
+
+    assert login_response.status_code == 200
+
+    data = login_response.json()
+
+    user = await test_db.users.find_one(
+        {
+            "phone": "09111111111"
+        }
+    )
+
+    return {
+        "user": user,
+        "access_token": data["access_token"],
+    }
