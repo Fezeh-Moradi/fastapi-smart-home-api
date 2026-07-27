@@ -35,5 +35,9 @@ jobs:
           python -m pip install pytest pytest-cov pytest-asyncio
 
       - name: Run tests
+        env:
+          ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+          JWT_SECRET_KEY: "test-secret-key"
+          MONGO_URI: "mongodb://localhost:27017"
         run: |
           python -m pytest -v -s
