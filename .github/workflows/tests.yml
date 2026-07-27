@@ -38,6 +38,7 @@ jobs:
         env:
           ACCESS_TOKEN_EXPIRE_MINUTES: "30"
           JWT_SECRET_KEY: "test-secret-key"
+          DATABASE_NAME: "smart_home_test"
           MONGO_URI: "mongodb://localhost:27017"
         run: |
           python -m pytest -v -s
