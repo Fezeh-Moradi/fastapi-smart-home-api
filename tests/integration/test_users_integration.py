@@ -1,6 +1,6 @@
 import pytest
 from bson import ObjectId
-from database.test_mongodb import users_test_collection
+from database.mongodb_test_config import users_test_collection
 from core.security import verify_password
 
 @pytest.mark.asyncio

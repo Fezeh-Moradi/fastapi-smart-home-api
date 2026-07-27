@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta
-
+from datetime import datetime, timedelta, UTC
 from jose import jwt
 from passlib.context import CryptContext
 
@@ -26,7 +25,7 @@ def verify_password(plain_password, hashed_password):
 def create_access_token(data: dict):
     to_encode = data.copy()
 
-    expire = datetime.utcnow() + timedelta(
+    expire = datetime.now(UTC) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
 

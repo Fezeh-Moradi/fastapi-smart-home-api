@@ -1,5 +1,13 @@
+import pytest
 from unittest.mock import patch
 from core.security import create_access_token
+from fastapi.security import HTTPAuthorizationCredentials
+from fastapi import HTTPException
+from jose import JWTError
+from core.deps import get_current_user
+
+
+
 
 def test_register_user(
     client,
@@ -178,4 +186,40 @@ def test_get_me_invalid_token(
     data = response.json()
 
     assert data["message"] == "Invalid token"
+
+
+def test_get_current_user_invalid_token():
+    credentials = HTTPAuthorizationCredentials(
+        scheme="Bearer",
+        credentials="invalid-token",
+    )
+
+    with patch(
+        "core.deps.jwt.decode",
+        side_effect=JWTError,
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            get_current_user(credentials)
+
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail == "Invalid token"
+
+
+def test_get_current_user_without_user_id():
+    credentials = HTTPAuthorizationCredentials(
+        scheme="Bearer",
+        credentials="valid-token",
+    )
+
+    with patch(
+        "core.deps.jwt.decode",
+        return_value={},
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            get_current_user(credentials)
+
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail == "Invalid token"
+
+
     

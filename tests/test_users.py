@@ -1,5 +1,9 @@
+import pytest
 from bson import ObjectId
 from unittest.mock import AsyncMock, patch, MagicMock
+from schemas.user import UserCreate
+from pydantic import ValidationError
+
 
 def test_get_users(
         client,
@@ -625,4 +629,36 @@ def test_get_users_sort_phone_descending(
     assert response.status_code == 200
     mock_cursor.sort.assert_called_once_with( "phone", -1 )
 
+
+def test_user_create_invalid_phone_prefix():
+    with pytest.raises(ValidationError) as exc_info:
+        UserCreate(
+            name="Test User",
+            phone="08123456789",
+            password="123456",
+        )
+
+    assert "Phone number must start with 09" in str(exc_info.value)
+
+
+def test_user_create_invalid_phone_length():
+    with pytest.raises(ValidationError) as exc_info:
+        UserCreate(
+            name="Test User",
+            phone="0912345678",
+            password="123456",
+        )
+
+    assert "Phone number must be 11 digits" in str(exc_info.value)
+
+
+def test_user_create_phone_contains_non_digits():
+    with pytest.raises(ValidationError) as exc_info:
+        UserCreate(
+            name="Test User",
+            phone="0912345678a",
+            password="123456",
+        )
+
+    assert "Phone number must contain only digits" in str(exc_info.value)
 

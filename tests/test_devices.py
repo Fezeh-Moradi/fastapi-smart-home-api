@@ -2,9 +2,16 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from bson import ObjectId
 from fastapi.testclient import TestClient
-
 from main import app
 from core.security import create_access_token
+from services.device_service import get_devices
+from fastapi import HTTPException
+from schemas.device import DeviceUpdate
+from services.device_service import (
+    get_device,
+    update_device,
+)
+
 
 
 @pytest.fixture
@@ -390,6 +397,56 @@ def test_get_device(
     assert data["serial_number"] == "SN-123456"
 
 
+@pytest.mark.asyncio
+async def test_get_devices_descending_sort(
+    mock_device_service_collections,
+):
+    mock_devices_collection, mock_users_collection = (
+        mock_device_service_collections
+    )
+
+    user_id = "507f1f77bcf86cd799439011"
+    user_object_id = ObjectId(user_id)
+
+    with patch(
+        "services.device_service.validate_current_user",
+        new=AsyncMock(return_value=user_object_id),
+    ):
+        mock_devices_collection.count_documents.return_value = 0
+
+        mock_cursor = AsyncMock()
+        mock_cursor.__aiter__.return_value = iter([])
+
+        mock_devices_collection.aggregate.return_value = mock_cursor
+
+        result = await get_devices(
+            skip=0,
+            limit=10,
+            sort="-name",
+            status=None,
+            device_type=None,
+            is_online=None,
+            current_user=user_id,
+        )
+
+    assert result["total"] == 0
+    assert result["skip"] == 0
+    assert result["limit"] == 10
+    assert result["items"] == []
+
+    mock_devices_collection.aggregate.assert_called_once()
+
+    pipeline = mock_devices_collection.aggregate.call_args.args[0]
+
+    assert {
+        "$sort": {
+            "name": -1
+        }
+    } in pipeline
+
+
+
+
 def test_get_device_invalid_id(
     client,
     mock_device_service_collections,
@@ -741,3 +798,70 @@ def test_delete_device_forbidden(
     data = response.json()
 
     assert data["message"] == "You don't have permission to delete this device"
+
+
+
+@pytest.mark.asyncio
+async def test_get_device_not_found_after_aggregation():
+    device_id = "507f1f77bcf86cd799439011"
+    user_id = "507f1f77bcf86cd799439012"
+
+    device_db = {
+        "_id": "507f1f77bcf86cd799439011",
+        "owner_id": "507f1f77bcf86cd799439012",
+    }
+
+    with patch(
+        "services.device_service.validate_device",
+        new=AsyncMock(return_value=device_db),
+    ), patch(
+        "services.device_service.validate_current_user",
+        new=AsyncMock(return_value=device_db["owner_id"]),
+    ), patch(
+        "services.device_service.devices_collection.aggregate",
+    ) as mock_aggregate:
+
+        mock_cursor = AsyncMock()
+        mock_cursor.__aiter__.return_value = iter([])
+
+        mock_aggregate.return_value = mock_cursor
+
+        with pytest.raises(HTTPException) as exc_info:
+            await get_device(
+                device_id=device_id,
+                current_user=user_id,
+            )
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Device not found"
+
+
+@pytest.mark.asyncio
+async def test_update_device_without_fields():
+    device_id = "507f1f77bcf86cd799439011"
+    user_id = "507f1f77bcf86cd799439012"
+
+    device_db = {
+        "_id": "507f1f77bcf86cd799439011",
+        "owner_id": "507f1f77bcf86cd799439012",
+    }
+
+    empty_update = DeviceUpdate()
+
+    with patch(
+        "services.device_service.validate_device",
+        new=AsyncMock(return_value=device_db),
+    ), patch(
+        "services.device_service.validate_current_user",
+        new=AsyncMock(return_value=device_db["owner_id"]),
+    ):
+
+        with pytest.raises(HTTPException) as exc_info:
+            await update_device(
+                device_id=device_id,
+                device=empty_update,
+                current_user=user_id,
+            )
+
+    assert exc_info.value.status_code == 400
+    assert exc_info.value.detail == "No fields to update"
