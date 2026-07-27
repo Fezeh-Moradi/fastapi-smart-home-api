@@ -27,14 +27,18 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov pytest-asyncio
 
-      - name: Check environment
+      - name: Debug
         run: |
           echo "Python:"
           python --version
           echo "Pytest:"
-          pytest --version
+          python -m pytest --version
+          echo "Working directory:"
+          pwd
           echo "Files:"
-          ls -la
+          find . -maxdepth 2 -type f | sort
 
       - name: Run tests
-        run: pytest -v -s
+        run: |
+          echo "STEP STARTED"
+          python -m pytest -v -s
