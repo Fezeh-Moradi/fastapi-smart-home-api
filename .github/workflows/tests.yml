@@ -1,44 +1,51 @@
 name: Tests
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+push:
+branches:
+- main
+pull_request:
+branches:
+- main
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+test:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+steps:
+  - name: Checkout
+    uses: actions/checkout@v5
 
-      - name: Setup Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.14"
+  - name: Setup Python
+    uses: actions/setup-python@v6
+    with:
+      python-version: "3.14"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-asyncio
+  - name: Install dependencies
+    run: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+      pip install pytest pytest-cov pytest-asyncio
 
-      - name: Debug
-        run: |
-          echo "Python:"
-          python --version
-          echo "Pytest:"
-          python -m pytest --version
-          echo "Working directory:"
-          pwd
-          echo "Files:"
-          find . -maxdepth 2 -type f | sort
+  - name: Debug environment
+    run: |
+      echo "===== Python ====="
+      python --version
 
-      - name: Run tests
-        run: |
-          echo "STEP STARTED"
-          python -m pytest -v -s
+      echo "===== Pip ====="
+      python -m pip --version
+
+      echo "===== Pytest ====="
+      python -m pytest --version
+
+      echo "===== Working directory ====="
+      pwd
+
+      echo "===== Project files ====="
+      find . -maxdepth 3 -type f | sort
+
+  - name: Run tests
+    run: |
+      echo "===== TEST STARTED ====="
+      python -m pytest -v -s --tb=long
+
