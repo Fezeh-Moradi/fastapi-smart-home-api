@@ -29,4 +29,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest --cov=. --cov-report=term-missing
+          python --version
+          pip --version
+          pytest --version
+          pytest -v -s
