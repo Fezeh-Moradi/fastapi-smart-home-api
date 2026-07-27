@@ -14,12 +14,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version: "3.14"
 
       - name: Install dependencies
         run: |
@@ -27,9 +27,19 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov pytest-asyncio
 
+      - name: Debug environment
+        run: |
+          echo "Python version:"
+          python --version
+          echo "Pip version:"
+          pip --version
+          echo "Pytest version:"
+          pytest --version
+          echo "Current directory:"
+          pwd
+          echo "Project files:"
+          ls -la
+
       - name: Run tests
         run: |
-          python --version
-          pip --version
-          pytest --version
-          pytest -v -s
+          pytest -v -s --tb=long
