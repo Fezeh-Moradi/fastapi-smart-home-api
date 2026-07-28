@@ -12,17 +12,11 @@ jobs:
 test:
 runs-on: ubuntu-latest
 
-
 services:
   mongodb:
     image: mongo:7
     ports:
       - 27017:27017
-    options: >-
-      --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
-      --health-interval 10s
-      --health-timeout 5s
-      --health-retries 5
 
 steps:
   - name: Checkout repository
@@ -46,13 +40,31 @@ steps:
       python -m pip install -r requirements.txt
       python -m pip install pytest pytest-cov pytest-asyncio
 
+  - name: Wait for MongoDB
+    run: |
+      python - <<'PY'
+      import socket
+      import time
+
+      for i in range(30):
+          try:
+              with socket.create_connection(("localhost", 27017), timeout=2):
+                  print("MongoDB is ready")
+                  break
+          except OSError:
+              print("Waiting for MongoDB...")
+              time.sleep(2)
+      else:
+          raise RuntimeError("MongoDB did not become ready")
+      PY
+
   - name: Run tests
     env:
       ACCESS_TOKEN_EXPIRE_MINUTES: "30"
       SECRET_KEY: "test-secret-key"
       DATABASE_NAME: "smart_home_test"
-      MONGO_URL: "mongodb://localhost:27017"
       TEST_DATABASE_NAME: "smart_home_test"
+      MONGO_URL: "mongodb://localhost:27017"
       ALGORITHM: "HS256"
     run: |
       python -m pytest -v -s
