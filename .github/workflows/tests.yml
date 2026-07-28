@@ -48,4 +48,4 @@ jobs:
           MONGO_URL: "mongodb://localhost:27017"
           ALGORITHM: "HS256"
         run: |
-          python -m pytest -v -s
+          python -m pytest -v -s --cov=. --cov-report=term-missing --cov-fail-under=90
