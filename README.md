@@ -1,5 +1,7 @@
 # Smart Home API
 
+[![Tests](https://github.com/Fezeh-Moradi/fastapi-smart-home-api/actions/workflows/tests.yml/badge.svg)](https://github.com/Fezeh-Moradi/fastapi-smart-home-api/actions/workflows/tests.yml)
+
 A RESTful backend API for a Smart Home system built with **FastAPI** and **MongoDB**.
 
 This project is a learning-oriented backend application focused on practicing modern Python backend development, asynchronous programming, authentication, database integration, testing, and CI/CD with GitHub Actions.
