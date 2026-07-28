@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch
-from core.security import create_access_token
+from core.security import create_access_token, hash_password
 from fastapi.security import HTTPAuthorizationCredentials
 from fastapi import HTTPException
 from jose import JWTError
@@ -67,8 +67,15 @@ def test_register_existing_user(
 
 
 def test_login_user(
-        client,
+    client,
+    mock_users_collection,
 ):
+    mock_users_collection.find_one.return_value = {
+        "_id": "existing-user-id",
+        "phone": "09123456789",
+        "password": hash_password("123456"),
+    }
+
     response = client.post(
         "/auth/login",
         json={
@@ -77,10 +84,16 @@ def test_login_user(
         },
     )
 
-    assert response.status_code ==200
+    assert response.status_code == 200
+
     data = response.json()
+
     assert "access_token" in data
     assert data["token_type"] == "bearer"
+
+    mock_users_collection.find_one.assert_awaited_once_with(
+        {"phone": "09123456789"}
+    )
 
 
 def test_login_user_not_found(
