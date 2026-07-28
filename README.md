@@ -120,28 +120,29 @@ smart_home_api/
 
 ## Architecture
 
-The project follows a layered structure:
+The application follows a layered architecture to separate API routing, business logic, data access, and shared infrastructure.
 
 ```text
 Client
    │
    ▼
-FastAPI Routers
+FastAPI Application
+   │
+   ├── Routers
+   │     ├── Auth
+   │     ├── Users
+   │     └── Devices
    │
    ▼
 Services
    │
+   ├── User Service
+   └── Device Service
+   │
    ▼
-MongoDB / Motor
-```
-
-Supporting components include:
-
-* `core/` for authentication dependencies, security, logging, and middleware
-* `handlers/` for custom exception handling
-* `schemas/` for Pydantic request and response models
-* `tests/` for unit and integration testing
-* `.github/workflows/` for continuous integration
+MongoDB
+   │
+   └── Motor Async Driver
 
 ---
 
