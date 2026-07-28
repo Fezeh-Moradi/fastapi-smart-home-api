@@ -33,19 +33,13 @@ jobs:
           python -m pip --version
           pwd
           ls -la
-<<<<<<< HEAD
-=======
 
->>>>>>> f4895004a9c6b7d58a2d86f7e911ce16122b71ba
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
           python -m pip install pytest pytest-cov pytest-asyncio
-<<<<<<< HEAD
-=======
 
->>>>>>> f4895004a9c6b7d58a2d86f7e911ce16122b71ba
       - name: Run tests
         env:
           ACCESS_TOKEN_EXPIRE_MINUTES: "30"
